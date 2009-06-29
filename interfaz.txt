@@ -1,0 +1,21 @@
+class GameState
+# Un constructor inicia la partida.
+       new(players: [String])
+# Un constructor que recupera el estado
+       new(serialization: String)
+# Persiste el estado actual del juego
+       serialization(): String
+# Obtiene el estado de una casilla, tupla numero y jugador o None si está vacía.
+       get_square(row : int, col : int): (number: int, player: int) or None
+# Obtiene los números que se pueden jugar.
+       get_available_numbers(): [int]
+# Realiza una jugada en una celda y retorna si se pudo realizar.
+       make_move(row: int, col : int, number : int, player: int): bool
+# Jugador habilitado para jugar, o None si la partida termina.
+       get_enabled_player(): int
+# Puntaje de cada jugador
+       get_player_score(player: int)
+# Obtiene el nombre de un jugador
+       get_player_name(player: int): String
+# Obtiene la cantidad de jugadores
+       get_player_count(): int

@@ -1,0 +1,6 @@
+En una consola ir hasta la carpeta src y ejecutar este comando:
+python setup.py dev
+
+Esto crea un link simbólico en $home/Activities.
+
+Al iniciar sugar-emulator se levantan las actividades en $home/Activities.

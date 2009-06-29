@@ -1,0 +1,7 @@
+[Activity]
+name = Quinteti
+service_name = uy.ceibaljam.Quinteti
+class = activity.Quinteti
+icon = activity-quin-te-ti
+activity_version = 1
+show_launcher = yes

@@ -1,0 +1,11 @@
+include *
+exclude *.pyc *~ dist
+recursive-include activity *
+recursive-exclude activity *.pyc *~
+recursive-include logic *
+recursive-exclude logic *.pyc *~
+recursive-include gui *
+recursive-exclude gui *.pyc
+recursive-include olpcgames *
+recursive-exclude olpcgames *.pyc *~
+
