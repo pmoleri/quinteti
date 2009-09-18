@@ -1,10 +1,30 @@
-import pygame
-from pygame.locals import *
-from logic.GameState import GameState
+#!/usr/bin/python
+# -*- coding: iso-8859-1 -*-
+#
+# Copyright 2008, 2009 Pablo Moleri, ceibalJAM
+# This file is part of Quinteti.
+#
+# Quinteti is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Quinteti is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Quinteti.  If not, see <http://www.gnu.org/licenses/>.
 
-from Button import Button
-from Cell import Cell
-from Player import Player
+"""Board represents the game board, and its capable of paint its elements in a given surface."""
+
+import pygame
+
+from logic.game import GameState
+
+from button import Button
+from cell import Cell
 
 file_dir = "gui/"
 
@@ -28,7 +48,8 @@ font_name = "DejaVu Serif"  #"DejaVuLGCSerif.ttf"  # None  to load pygame defaul
 font_size = 24
 user_font_color = (255, 255, 255)
 
-class BoardUI:
+"""Class Board keeps all the grafical elements as well as a reference to the logical game state."""
+class Board:
     
     # Center of initial number positions
     number_locations = [
@@ -78,11 +99,11 @@ class BoardUI:
         self.screen = screen
         self.game = game
         self.showing_instructions = False
-        self.initBoard()
+        self.init_board()
 
-    def initBoard (self):
+    def init_board (self):
         self.new_button = Button(new_image_coords, file_dir + new_image,  self.new_game)
-        self.instructions_button = Button(instructions_coords, file_dir + instructions_button,  self.show_instructions)
+        self.instructions_button = Button(instructions_coords, file_dir + instructions_button,  self._show_instructions)
         self.cells = []
         self.numbers = []
         self.lastSelectedBoardCell = None
@@ -90,11 +111,11 @@ class BoardUI:
         
         self.backgroundImage = pygame.image.load(image_fondo)
         
-        self.initCells()
-        self.initNumbers()
+        self._init_cells()
+        self._init_numbers()
         
         # Creates a sprite group, with all the board visible elements inside
-        self.paintBackground()
+        self._paint_background()
         self.items = pygame.sprite.Group()
         self.items.add(self.new_button)
         self.items.add(self.instructions_button)
@@ -108,9 +129,9 @@ class BoardUI:
 
     def new_game(self):
         self.game = GameState("", "")
-        self.initBoard()
+        self.init_board()
         
-    def initCells(self):
+    def _init_cells(self):
         i = 1
         for row in range(1,4):
             for col in range(1,4):
@@ -119,30 +140,30 @@ class BoardUI:
                 else:
                     number = None
                 location = self.locations[i-1]
-                self.cells.append( Cell(location, self.get_number_name(number), i,  image_size) )
+                self.cells.append( Cell(location, self._get_number_name(number), i, image_size) )
                 i += 1
     
-    def initNumbers(self):
+    def _init_numbers(self):
         k = 0
         for location in self.number_locations:
             k += 1
-            self.numbers.append(Cell(location, self.get_number_name(k), k,  image_size)) 
+            self.numbers.append(Cell(location, self._get_number_name(k), k, image_size)) 
 
-    def setPlayers (self, namePlayer1, namePlayer2):
-        self.game = GameState(namePlayer1, namePlayer2)
+    def set_players(self, name_player1, name_player2):
+        self.game = GameState(name_player1, name_player2)
    
-    def paintBackground(self):
+    def _paint_background(self):
         rect = self.backgroundImage.get_rect()
         rect.topleft = (0,  0)
         self.screen.blit(self.backgroundImage, rect)
 
-    def paint_winner(self,  i):
+    def _paint_winner(self,  i):
         image = pygame.image.load(file_dir + player_win_image)
         rect = image.get_rect()
         rect.topleft = self.players_score_box_location[i]
         self.screen.blit(image,  rect)
     
-    def paintPlayersStatus(self):
+    def _paint_players_status(self):
         player1Name = "" 
         player2Name = ""
     
@@ -155,7 +176,7 @@ class BoardUI:
                         self.font.set_bold(False)
                 else:
                     if self.game.get_player_score(i) >= self.game.get_player_score(3-i):
-                        self.paint_winner(i-1)
+                        self._paint_winner(i-1)
                     
                 player_name = self.game.get_player_name(i)
                 #str_player = 'Jugador %s: %s' % (i, player_name)
@@ -176,14 +197,14 @@ class BoardUI:
         # Using an sprite group all the items are painted:
         
         #self.items.clear(self.screen,  self.backgroundImage)   # If only sprites are cleared, players scores remain
-        self.paintBackground()                                                  # Instead, the whole background is repainted
+        self._paint_background()                                                  # Instead, the whole background is repainted
         self.items.draw(self.screen)
-        self.paintPlayersStatus()
+        self._paint_players_status()
         
         if self.showing_instructions:
-            self.paint_instructions()
+            self._paint_instructions()
 
-    def paint_instructions(self):
+    def _paint_instructions(self):
         image = pygame.image.load(file_dir + instructions_image)
         rect = image.get_rect()
         rect.center = self.screen.get_rect().center
@@ -201,7 +222,7 @@ class BoardUI:
         # Checks if the selected coordinate is a board cell
         isCell = False
         for c in self.cells:
-            if c.coordsIn(x,y):
+            if c.coordsIn(x, y):
                 isCell = True
                 self.lastSelectedBoardCell = c
                 if self.lastSelectedNumberCell != None:
@@ -209,7 +230,7 @@ class BoardUI:
                     player = self.game.get_enabled_player()
                     ok = self.game.make_move(row, col, self.lastSelectedNumberCell.idxCell, player)
                     if ok:
-                        self.lastSelectedBoardCell.setImage( self.get_number_name(self.lastSelectedNumberCell.idxCell) )
+                        self.lastSelectedBoardCell.setImage( self._get_number_name(self.lastSelectedNumberCell.idxCell) )
                         self.items.add(self.lastSelectedBoardCell)
                         self.items.remove(self.lastSelectedNumberCell)
                         self.lastSelectedNumberCell.setImage(None)
@@ -221,24 +242,26 @@ class BoardUI:
             for n in self.numbers:
                 if n.coordsIn(x,y):
                     if self.lastSelectedNumberCell:
-                        self.lastSelectedNumberCell.setImage( self.get_number_name(self.lastSelectedNumberCell.idxCell) )
+                        self.lastSelectedNumberCell.setImage( self._get_number_name(self.lastSelectedNumberCell.idxCell) )
                     self.lastSelectedNumberCell = n
-                    n.setImage( self.get_disabled_number_name(n.idxCell) )
+                    n.setImage( self._get_disabled_number_name(n.idxCell) )
                     
         if self.new_button.coordsIn(x, y):
             self.new_button.callback()
+        
+        return True
     
-    def show_instructions(self):
+    def _show_instructions(self):
         self.showing_instructions = True
     
-    def get_number_name(self, number):
+    def _get_number_name(self, number):
         if (number == None) or (number == 0):
             return None
         else:
-            return file_dir +  image_number.replace("<N>", str(number))
+            return file_dir + image_number.replace("<N>", str(number))
 
-    def get_disabled_number_name(self, number):
+    def _get_disabled_number_name(self, number):
         if (number == None) or (number == 0):
             return None
         else:
-            return file_dir +  image_disabled_number.replace("<N>", str(number))
+            return file_dir + image_disabled_number.replace("<N>", str(number))

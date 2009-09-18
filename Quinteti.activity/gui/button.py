@@ -1,7 +1,28 @@
+#!/usr/bin/python
+# -*- coding: iso-8859-1 -*-
+#
+# Copyright 2008, 2009 Pablo Moleri, ceibalJAM
+# This file is part of Quinteti.
+#
+# Quinteti is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Quinteti is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Quinteti.  If not, see <http://www.gnu.org/licenses/>.
+
 import pygame
 
+"""Button is a PyGame Sprite with a callback function."""
+
 class Button(pygame.sprite.Sprite):
-    def __init__(self, initial_position, nomImage,  callback):
+    def __init__(self, initial_position, nomImage, callback):
 
         pygame.sprite.Sprite.__init__(self)
         
@@ -12,8 +33,7 @@ class Button(pygame.sprite.Sprite):
         self.callback = callback
     
     def coordsIn(self, x, y):
-        #print "Test x: %s < %s < %s Test y: %s < %s < %s" % (self.rect.left,  x,  self.rect.right,  self.rect.top,  y,  self.rect.bottom)
-        if ( self.rect.collidepoint(x, y) ):
+        if self.rect.collidepoint(x, y):
             return True
         return False
     
@@ -22,7 +42,3 @@ class Button(pygame.sprite.Sprite):
             self.image = pygame.image.load(nomImage)
         else:
             self.image = None
-
-# Codigo para debug de este modulo:
-#if __name__ == "__main__":
-

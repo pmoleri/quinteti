@@ -1,37 +1,76 @@
-import pygame, olpcgames, logging
-from olpcgames import pausescreen
-from pygame.locals import *
+#!/usr/bin/python
+# -*- coding: iso-8859-1 -*-
+#
+# Copyright 2008, 2009 Pablo Moleri, ceibalJAM
+# This file is part of Quinteti.
+#
+# Quinteti is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Quinteti is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Quinteti.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact information:
+# Pablo Moleri pmoleri@gmail.com
+# ceibalJAM http://ceibaljam.org
 
-from BoardUI import BoardUI
+"""Main module of the game.
 
-from logic.GameState import GameState
+This is the main module of the game, it can be executed as a standalone game
+or imported as a sugar activity.
+"""
 
+import pygame
+import olpcgames
+import olpcgames.pausescreen
+import logging
+
+from gui.board import Board
+from logic.game import GameState
 #import logic.Mesh
 
 import os
 
-log = logging.getLogger( 'quinteti run' )
-log.setLevel( logging.DEBUG )
+log = logging.getLogger('quinteti')
+log.setLevel(logging.DEBUG)
 
-MAX_FPS = 25                # Max frames per second
-SLEEP_TIMEOUT = 25     # Seconds until the PauseScreen if no events show up
+MAX_FPS = 25            # Max frames per second
+SLEEP_TIMEOUT = 30      # Seconds until the PauseScreen if no events show up
 
-# El modulo se llama desde run.py.
 def main():
+    """Main function of the game.
+    
+    This function initializes the game and enters the PyGame main loop.
+    """
+    
+    # Inits PyGame module
     pygame.init()
     
-    internal_size = (1200,  825)        # The game is designed to work in this size (xo display size)
-    target_size = (900, 619)             # The game will be sown in this size, useful for testing in regular PCs with less resolution than xo
+    # Loads Sugar standard cursor
+    a, b, c, d = pygame.cursors.load_xbm("gui/standardcursor.xbm", "gui/standardcursor_mask.xbm")
+    pygame.mouse.set_cursor(a, b, c, d)
+
+    internal_size = (1200, 825)     # The game is designed to work in this size (xo display size)
+    target_size = (900, 619)        # The game will be sown in this size, useful for testing in regular PCs with less resolution than xo
     
     flags = 0
     if olpcgames.ACTIVITY:
         # Running as Activity
         target_size = olpcgames.ACTIVITY.game_size
-        #logic.Mesh.init_mesh(log)                                  # Mesh isn't ready in this version
-    #else:
+        #logic.Mesh.init_mesh(log)   # Mesh isn't ready in this version
+    else:
+        pass
         # Uncomment this if want to execute fullscreen on regular PCs
         # flags = pygame.FULLSCREEN
-    real_screen = pygame.display.set_mode(target_size,  flags)
+    
+    real_screen = pygame.display.set_mode(target_size, flags)
     
     # The scale factor beetween internal and target
     if internal_size == target_size:
@@ -44,73 +83,76 @@ def main():
     
     # Creates a new logic game, player names aren't used without mesh
     game = GameState("Jugador1", "Jugador2") 
-    boardUI = BoardUI(internal_screen, game)
-    boardUI.paintBoardElements()
+    board = Board(internal_screen, game)
+    board.paintBoardElements()
     
     pygame.display.update()
     
+    # This clock is used to keep the game at the desired FPS.
     clock = pygame.time.Clock()
     
-    # Comienza el bucle principal
-    update = True       # La primera vez tiene que pintar la pantalla
+    # Main loop
+    update = True       # The first time the screen need to be updated
     running = True
     while running:
         
         # Waits for events, if none the game pauses:
         # http://wiki.laptop.org/go/Game_development_HOWTO#Reducing_CPU_Load
         milliseconds = clock.tick(MAX_FPS)                              # waits if the game is running faster than MAX_FPS
-        events = pausescreen.get_events(SLEEP_TIMEOUT)     # Event-management loop with support for pausing after X seconds (20 here)
+        events = olpcgames.pausescreen.get_events(SLEEP_TIMEOUT)        # Event-management loop with support for pausing after X seconds (20 here)
         
         if events:
             for event in events:
                 if event.type == pygame.QUIT:
                     running = False
-                elif event.type == pygame.KEYDOWN and (event.key == pygame.K_q or event.key == pygame.K_ESCAPE):
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     running = False
             
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if scale:
-                        [x, y] = [coord*s for (coord, s) in zip(event.pos, scale)]       # Multiplica las coordenadas realeas por el factor
-                                                                                                                    # para llevarlas a coordenadas internas
+                        x = event.pos[0] * scale[0]     # Multiplies the real coordinates by the scale factor
+                        y = event.pos[1] * scale[1]     # to get the internal coordinates
                     else:
                         (x, y) = event.pos
 
-                    boardUI.processXY(x, y)
-                    update = True
+                    update = board.processXY(x, y)
                 
                 if event.type == pygame.USEREVENT:
                     if event.code == olpcgames.FILE_READ_REQUEST:
                         game = read_file(event.filename)
                         log.debug("Loaded:" + game.serialization())
-                        boardUI = BoardUI(internal_screen, game)
+                        board = Board(internal_screen, game)
                         update = True
                     if event.code == olpcgames.FILE_WRITE_REQUEST:
                         save_file(event.filename, game)
             
             if update == True:
-                boardUI.paintBoardElements()
+                board.paintBoardElements()
                 if scale:
                     pygame.transform.scale(internal_screen, target_size, real_screen)
                 update = False
             
-            pygame.display.update()
+            pygame.display.flip()
         
     # Una vez que sale del loop manda la senal de quit para que cierre la ventana
     pygame.quit()
 
-def save_file(file, game):
+def _save_file(file, game):
+    """Saves the game to the given file."""
     string = game.serialization()
     fsock = open(file, 'w')
     fsock.write(string)
     fsock.close()
 
-def read_file(file):
+def _read_file(file):
+    """Loads the game from the given file."""
     fsock = open(file, "r")
     string = fsock.read()
     fsock.close()
     return GameState.fromString(string)
 
-# Codigo para debug de este modulo:
 if __name__ == "__main__":
+    """Standalone code."""
+    
     logging.basicConfig()
     main()

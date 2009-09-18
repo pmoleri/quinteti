@@ -1,26 +1,48 @@
+#!/usr/bin/python
+# -*- coding: iso-8859-1 -*-
+#
+# Copyright 2008, 2009 Pablo Moleri
+# This file is part of Quinteti.
+#
+# Quinteti is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Quinteti is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Quinteti.  If not, see <http://www.gnu.org/licenses/>.
+
+"""GamesState, keeps the state of a game, and encloses game logic."""
 
 class GameState:
 
-    # Un constructor inicia la partida.
     def __init__(self, player_1, player_2, matrix_size=3, target_score=15):
-        self.player_1_name=player_1
-        self.player_2_name=player_2
-        self.player_1_score=0
-        self.player_2_score=0
-        self.turn=1
-        self.target_score=target_score
-        self.matrix=[]
-        self.state=[]
+        ''' Creates a new game with the given players. '''
+        
+        self.player_1_name = player_1
+        self.player_2_name = player_2
+        self.player_1_score = 0
+        self.player_2_score = 0
+        self.turn = 1
+        self.target_score = target_score
+        self.matrix = []
+        self.state = []
         for i in range(0, matrix_size):
             self.matrix.append([])
             self.state.append([])
             for j in range(0, matrix_size):
                 self.matrix[i].append(0)
                 self.state[i].append(None)
-        self.numbers=range(1, len(self.matrix[0])*len(self.matrix)+1)
+        self.numbers = range(1, len(self.matrix[0])*len(self.matrix)+1)
     
-    # Un constructor que recupera el estado
     def fromString(string):
+        """A static method for loading a new game from a serialized game string."""
+        
         dic = eval(string)
         state = dic['state']
         matrix = dic['matrix']
@@ -39,40 +61,45 @@ class GameState:
                 if number in game.numbers:
                     game.numbers.remove(number)
         return game
-    fromString = staticmethod(fromString)    # Crea un atributo estatico del tipo funcion
     
-    # Persiste el estado actual del juego
+    fromString = staticmethod(fromString)    # Maps the function as an static class attribute
+    
     def serialization(self):
+        """Returns the game in a serialized string format."""
+        
         return str(self)
     
-    # Obtiene el estado de una casilla, tupla numero y jugador o None si esta vacia.
-    #   get_cell(row : int, col : int): (number: int, player: int) or None
+
     def get_cell(self, row1, col1):
-        row, col = (row1-1, col1-1)
+        """Returns the cell state: (number, player) Or None."""
+        row, col = row1-1, col1-1
         return (self.matrix[row][col], self.state[row][col])
-    # Obtiene los numeros que se pueden jugar.
-    #   get_available_numbers(): [int]
+    
     def get_available_numbers(self): 
-        return self.numbers
+        """Returns the list of available numbers (no played)."""
         
-    # Realiza una jugada en una celda y retorna si se pudo realizar.
-    #   make_move(row: int, col : int, number : int, player: int): bool
+        return self.numbers
+    
     def make_move(self, row1, col1, number, player):
+        """Makes a move with the given number in the given cell. Returns a boolean if the move is valid."""
+        
         row, col = (row1-1, col1-1)
-        if (self.state[row][col]==None):
-            if (self.turn==player):
+        if (self.state[row][col] == None):
+            if (self.turn == player):
                 if (number in self.numbers):
-                    #obtengo una copia de la columna
+                    # shadow copy of the given column
                     col_list = [fila[col] for fila in self.matrix]
-                    #obtengo una copia de la fila
+                    
+                    # shadow copy of the given row
                     row_list = self.matrix[row][:]
+                    
+                    # Test the move
+                    score = 0
+                    score += self._check_action(col_list, row, number)
+                    score += self._check_action(row_list, col, number)
                         
-                    score=0
-                    score+=self.check_action(col_list, row, number)
-                    score+=self.check_action(row_list, col, number)
-                        
-                    self.state[row][col]=self.turn
-                    self.matrix[row][col]=number
+                    self.state[row][col] = self.turn
+                    self.matrix[row][col] = number
                     self.numbers.remove(number)
                         
                     if self.turn == 1:
@@ -84,9 +111,9 @@ class GameState:
                     return True
         return False
     
-    # Rutina privada para verificar si la jugada suma puntos, se pasa una lista
-    # que representa una columna o una fila y la jugada.
-    def check_action(self, list, pos, number):
+    def _check_action(self, list, pos, number):
+        """Tests if a move in a row (or column) scores."""
+        
         list[pos] = number
         if 0 in list:
             return 0
@@ -95,33 +122,25 @@ class GameState:
         else:
             return 0
             
-            
-    # Jugador habilitado para jugar, o None si la partida termina.
-    #   get_enabled_player(): int
     def get_enabled_player(self):
+        """Returns the turn (enabled player) or None if the game is over."""
         if len(self.numbers) == 0:
             return None
         else:
             return self.turn
         
-    # Puntaje de cada jugador
-    #      get_player_score(player: int)
     def get_player_score(self, player):
         if player == 1 :
             return self.player_1_score
         else:
             return self.player_2_score
-                
-    # Obtiene el nombre de un jugador
-    #   get_player_name(player: int): String
+    
     def get_player_name(self, player):
         if player == 1 : 
             return self.player_1_name
         else:
             return self.player_2_name
-                
-    # Obtiene la cantidad de jugadores
-    #   get_player_count(): int
+    
     def get_player_count(self):
         return 2
     
@@ -134,27 +153,20 @@ class GameState:
                'player_1_score': self.player_1_score,
                'player_2_score': self.player_2_score,
                'target_score': self.target_score}
-        return str(dic)
-       
+        return str(dic)   
 
 if __name__ == "__main__":
-    var=GameState("Juan", "Pablo")
-    print var.target_score
+    """Module test function."""
     
-    var.make_move(0, 1, 2, 1)
-    var.make_move(1, 1, 7, 2)
-    var.make_move(2, 1, 6, 1)
+    game = GameState("Juan", "Pablo")
+    print game.target_score
     
-    print var
+    game.make_move(0, 1, 2, 1)
+    game.make_move(1, 1, 7, 2)
+    game.make_move(2, 1, 6, 1)
     
-    var2 = GameState.fromString( var.serialization() )
-    print 'var2 %s' % (var2)
-    print var2.get_player_name(1)
+    print game
     
-#    print var.matrix
-#    print var.state
-#    print var.player_1_score
-#    print var.get_player_score(1)
-#    print var.player_2_score
-#    print var.get_player_score(2)
-#    print var.get_player_name(1)
+    game2 = GameState.fromString( game.serialization() )
+    print 'game2 %s' % (game)
+    print game2.get_player_name(1)
