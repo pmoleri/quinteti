@@ -26,18 +26,18 @@ class Button(pygame.sprite.Sprite):
 
         pygame.sprite.Sprite.__init__(self)
         
-        self.setImage(nomImage)
+        self.set_image(nomImage)
         self.rect = self.image.get_rect()
         self.rect.topleft = initial_position     # Moves the recteangle to its predetermined center
         
         self.callback = callback
     
-    def coordsIn(self, x, y):
+    def coords_in(self, x, y):
         if self.rect.collidepoint(x, y):
             return True
         return False
     
-    def setImage(self, nomImage):
+    def set_image(self, nomImage):
         if nomImage:
             self.image = pygame.image.load(nomImage)
         else:

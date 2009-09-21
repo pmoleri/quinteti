@@ -81,7 +81,10 @@ class GameState:
         return self.numbers
     
     def make_move(self, row1, col1, number, player):
-        """Makes a move with the given number in the given cell. Returns a boolean if the move is valid."""
+        """Makes a move with the given number in the given cell.
+        
+        Returns a boolean if the move is valid and the score difference.
+        """
         
         row, col = (row1-1, col1-1)
         if (self.state[row][col] == None):
@@ -93,11 +96,19 @@ class GameState:
                     # shadow copy of the given row
                     row_list = self.matrix[row][:]
                     
+                    hits = []   # collection of posistions that made points
+                    
                     # Test the move
-                    score = 0
-                    score += self._check_action(col_list, row, number)
-                    score += self._check_action(row_list, col, number)
-                        
+                    col_score = self._check_action(col_list, row, number)                        
+                    row_score = self._check_action(row_list, col, number)
+                    score = col_score + row_score
+                    
+                    if col_score:
+                        hits.extend(col_list)
+                    
+                    if row_score:
+                        hits.extend(row_list)
+                    
                     self.state[row][col] = self.turn
                     self.matrix[row][col] = number
                     self.numbers.remove(number)
@@ -108,8 +119,8 @@ class GameState:
                     else:
                         self.player_2_score += score
                         self.turn = 1
-                    return True
-        return False
+                    return True, hits
+        return False, None
     
     def _check_action(self, list, pos, number):
         """Tests if a move in a row (or column) scores."""

@@ -21,6 +21,8 @@
 
 import pygame
 
+import os
+
 from logic.game import GameState
 
 from button import Button
@@ -43,6 +45,8 @@ instructions_button = "instructions_button.png"
 instructions_image = "instructions.png"
 
 player_win_image = "player_win.png"
+
+score_sound_file = file_dir + "jupeee.ogg"
 
 font_name = "DejaVu Serif"  #"DejaVuLGCSerif.ttf"  # None  to load pygame default font
 font_size = 24
@@ -99,6 +103,7 @@ class Board:
         self.screen = screen
         self.game = game
         self.showing_instructions = False
+        self.score_sound = pygame.mixer.Sound(score_sound_file)
         self.init_board()
 
     def init_board (self):
@@ -119,13 +124,9 @@ class Board:
         self.items = pygame.sprite.Group()
         self.items.add(self.new_button)
         self.items.add(self.instructions_button)
-        for c in self.cells:
-            if c.image:
-                self.items.add( c )
-            
+        
         for n in self.numbers:
-            if n.image:
-                self.items.add( n )
+            self.items.add(n)
 
     def new_game(self):
         self.game = GameState("", "")
@@ -133,21 +134,23 @@ class Board:
         
     def _init_cells(self):
         i = 1
-        for row in range(1,4):
-            for col in range(1,4):
+        for row in range(1, 4):
+            for col in range(1, 4):
                 if self.game:
                     number = self.game.get_cell(row, col)[0]
                 else:
                     number = None
                 location = self.locations[i-1]
-                self.cells.append( Cell(location, self._get_number_name(number), i, image_size) )
+                self.cells.append( Cell(location, None, None, i, image_size) )
                 i += 1
     
     def _init_numbers(self):
         k = 0
         for location in self.number_locations:
             k += 1
-            self.numbers.append(Cell(location, self._get_number_name(k), k, image_size)) 
+            normal_image = self._get_number(k)
+            selected_image = self._get_disabled_number(k)
+            self.numbers.append( Cell(location, normal_image, selected_image, k, image_size) )
 
     def set_players(self, name_player1, name_player2):
         self.game = GameState(name_player1, name_player2)
@@ -193,7 +196,7 @@ class Board:
                 score_rect.center = self.players_score_center_location[i-1]
                 self.screen.blit(score_surface, score_rect)
 
-    def paintBoardElements(self):
+    def paint_board_elements(self):
         # Using an sprite group all the items are painted:
         
         #self.items.clear(self.screen,  self.backgroundImage)   # If only sprites are cleared, players scores remain
@@ -216,52 +219,69 @@ class Board:
             self.showing_instructions = False
             return
         else:
-            if self.instructions_button.coordsIn(x, y):
+            if self.instructions_button.coords_in(x, y):
                 self.instructions_button.callback()
         
         # Checks if the selected coordinate is a board cell
         isCell = False
         for c in self.cells:
-            if c.coordsIn(x, y):
+            if c.coords_in(x, y):
                 isCell = True
                 self.lastSelectedBoardCell = c
                 if self.lastSelectedNumberCell != None:
                     row, col = c.get_pos()
                     player = self.game.get_enabled_player()
-                    ok = self.game.make_move(row, col, self.lastSelectedNumberCell.idxCell, player)
-                    if ok:
-                        self.lastSelectedBoardCell.setImage( self._get_number_name(self.lastSelectedNumberCell.idxCell) )
-                        self.items.add(self.lastSelectedBoardCell)
-                        self.items.remove(self.lastSelectedNumberCell)
-                        self.lastSelectedNumberCell.setImage(None)
+                    ok, hits = self.game.make_move(row, col, self.lastSelectedNumberCell.id_cell, player)
+                    if ok:                        
+                        self.lastSelectedNumberCell.rect = self.lastSelectedBoardCell.rect  # Moves the number to the board
+                        self.lastSelectedNumberCell.set_selected(False)
                         self.lastSelectedNumberCell = None
+                        
+                        if hits:
+                            self.score_sound.play()
+                            # Sets a timer to update blinked cells in one second
+                            pygame.time.set_timer(pygame.USEREVENT + 1, 1500)
+                            for number in self.numbers:
+                                if number.id_cell in hits:
+                                    number.set_selected(True)
+
+                
                 break
     
         # Checks if the selected coordinate is a number
         if isCell == False:
             for n in self.numbers:
-                if n.coordsIn(x,y):
+                if n.coords_in(x,y):
                     if self.lastSelectedNumberCell:
-                        self.lastSelectedNumberCell.setImage( self._get_number_name(self.lastSelectedNumberCell.idxCell) )
+                        self.lastSelectedNumberCell.set_selected(False)
                     self.lastSelectedNumberCell = n
-                    n.setImage( self._get_disabled_number_name(n.idxCell) )
+                    n.set_selected(True)
                     
-        if self.new_button.coordsIn(x, y):
+        if self.new_button.coords_in(x, y):
             self.new_button.callback()
         
         return True
     
+    def user_event(self, event):
+        pygame.time.set_timer(pygame.USEREVENT + 1, 0)
+        if event.type == pygame.USEREVENT + 1:
+            # Deselect all numbers
+            for number in self.numbers:
+                number.set_selected(False)
+    
     def _show_instructions(self):
         self.showing_instructions = True
     
-    def _get_number_name(self, number):
+    def _get_number(self, number):
         if (number == None) or (number == 0):
             return None
         else:
-            return file_dir + image_number.replace("<N>", str(number))
+            path = os.path.join(file_dir, image_number.replace("<N>", str(number)))
+            return pygame.image.load(path)
 
-    def _get_disabled_number_name(self, number):
+    def _get_disabled_number(self, number):
         if (number == None) or (number == 0):
             return None
         else:
-            return file_dir + image_disabled_number.replace("<N>", str(number))
+            path = os.path.join(file_dir, image_disabled_number.replace("<N>", str(number)))
+            return pygame.image.load(path)

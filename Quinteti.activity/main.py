@@ -41,7 +41,7 @@ import os
 log = logging.getLogger('quinteti')
 log.setLevel(logging.DEBUG)
 
-MAX_FPS = 25            # Max frames per second
+MAX_FPS = 20            # Max frames per second
 SLEEP_TIMEOUT = 30      # Seconds until the PauseScreen if no events show up
 
 def main():
@@ -79,12 +79,12 @@ def main():
     else:
         # Running on regular PC, the screen its scaled to te target_size
         internal_screen = pygame.Surface(internal_size)
-        scale = (internal_size[0] / float(target_size[0]),  internal_size[1] / float(target_size[1]) )
+        scale = (internal_size[0] / float(target_size[0]), internal_size[1] / float(target_size[1]) )
     
     # Creates a new logic game, player names aren't used without mesh
     game = GameState("Jugador1", "Jugador2") 
     board = Board(internal_screen, game)
-    board.paintBoardElements()
+    board.paint_board_elements()
     
     pygame.display.update()
     
@@ -114,25 +114,30 @@ def main():
                         y = event.pos[1] * scale[1]     # to get the internal coordinates
                     else:
                         (x, y) = event.pos
-
+                    
                     update = board.processXY(x, y)
                 
                 if event.type == pygame.USEREVENT:
                     if event.code == olpcgames.FILE_READ_REQUEST:
-                        game = read_file(event.filename)
+                        game = _read_file(event.filename)
                         log.debug("Loaded:" + game.serialization())
                         board = Board(internal_screen, game)
                         update = True
-                    if event.code == olpcgames.FILE_WRITE_REQUEST:
-                        save_file(event.filename, game)
-            
+                    elif event.code == olpcgames.FILE_WRITE_REQUEST:
+                        _save_file(event.filename, game)
+                
+                if event.type > pygame.USEREVENT and event.type <= pygame.USEREVENT + 10:
+                    log.debug("New user event")
+                    board.user_event(event)
+                    update = True
+                
             if update == True:
-                board.paintBoardElements()
+                board.paint_board_elements()
                 if scale:
                     pygame.transform.scale(internal_screen, target_size, real_screen)
                 update = False
             
-            pygame.display.flip()
+        pygame.display.flip()
         
     # Una vez que sale del loop manda la senal de quit para que cierre la ventana
     pygame.quit()

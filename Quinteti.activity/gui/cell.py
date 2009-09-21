@@ -22,34 +22,38 @@ import pygame
 """Cell is a PyGame Sprite, capable of loading an image and retain a cell identifier."""
 
 class Cell(pygame.sprite.Sprite):
-    def __init__(self, initial_position, nomImage, idxCell,  size_rect):
+    
+    def __init__(self, initial_position, image, selected_image, id_cell, size_rect):
 
         pygame.sprite.Sprite.__init__(self)
         
-        self.idxCell = idxCell
+        self.id_cell = id_cell
         
-        self.rect = size_rect.move(0, 0)             # Attempting to move creates a copy
-        self.rect.center = initial_position     # Moves the recteangle to its predetermined center
+        self.rect = size_rect.move(0, 0)            # Attempting to move creates a copy
+        self.rect.center = initial_position         # Moves the recteangle to its predetermined center
         
-        self.setImage(nomImage)
+        self.normal_image = image
+        self.selected_image = selected_image
+        
+        if image:
+            self.set_selected(False)
     
-    def coordsIn(self, x, y):
+    def coords_in(self, x, y):
         #print "Test x: %s < %s < %s Test y: %s < %s < %s" % (self.rect.left,  x,  self.rect.right,  self.rect.top,  y,  self.rect.bottom)
         if ( self.rect.collidepoint(x, y) ):
             return True
         return False
     
-    def setImage(self, nomImage):
-        if nomImage:
-            self.image = pygame.image.load(nomImage)
-            self.nameImage = nomImage
+    def set_selected(self, selected):
+        self.selected = selected
+        if self.selected:
+            self.image = self.selected_image
         else:
-            self.image = None
-            self.nameImage = None
+            self.image = self.normal_image
         
     def get_pos(self):
-        row = (self.idxCell - 1) / 3 + 1
-        col = (self.idxCell - 1) % 3 + 1
+        row = (self.id_cell - 1) / 3 + 1
+        col = (self.id_cell - 1) % 3 + 1
         return row, col
 
 if __name__ == "__main__":

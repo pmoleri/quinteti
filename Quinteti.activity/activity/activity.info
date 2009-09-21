@@ -1,7 +1,7 @@
 [Activity]
 name = Quinteti
-service_name = uy.ceibaljam.Quinteti
+service_name = org.ceibaljam.Quinteti
 class = activity.Quinteti
 icon = activity-quin-te-ti
-activity_version = 1
+activity_version = 2
 show_launcher = yes
