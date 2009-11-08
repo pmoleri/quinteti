@@ -19,6 +19,8 @@
 
 """GamesState, keeps the state of a game, and encloses game logic."""
 
+import random
+
 class GameState:
 
     def __init__(self, player_1, player_2, matrix_size=3, target_score=15):
@@ -86,6 +88,15 @@ class GameState:
         Returns a boolean if the move is valid and the score difference.
         """
         
+        ok, hits, score = self._make_move(row1, col1, number, player, True)
+        return ok, hits
+    
+    def _make_move(self, row1, col1, number, player, real):
+        """Makes a move with the given number in the given cell.
+        
+        Returns a boolean if the move is valid and the score difference.
+        """
+        
         row, col = (row1-1, col1-1)
         if (self.state[row][col] == None):
             if (self.turn == player):
@@ -109,18 +120,26 @@ class GameState:
                     if row_score:
                         hits.extend(row_list)
                     
-                    self.state[row][col] = self.turn
-                    self.matrix[row][col] = number
-                    self.numbers.remove(number)
-                        
-                    if self.turn == 1:
-                        self.player_1_score += score
-                        self.turn = 2
-                    else:
-                        self.player_2_score += score
-                        self.turn = 1
-                    return True, hits
-        return False, None
+                    if real:
+                        self.state[row][col] = self.turn
+                        self.matrix[row][col] = number
+                        self.numbers.remove(number)
+                            
+                        if self.turn == 1:
+                            self.player_1_score += score
+                            self.turn = 2
+                        else:
+                            self.player_2_score += score
+                            self.turn = 1
+                    return True, hits, score
+#                else:
+#                    print "invalid number"
+#            else:
+#                print "invalid player"
+#        else:
+#            print "invalid cell state"
+        
+        return False, None, 0
     
     def _check_action(self, list, pos, number):
         """Tests if a move in a row (or column) scores."""
@@ -165,6 +184,46 @@ class GameState:
                'player_2_score': self.player_2_score,
                'target_score': self.target_score}
         return str(dic)   
+
+    
+    def auto_play(self, player):
+        '''Returns an automatic play from computer.
+        
+        The strategy is:
+            - Try to make 2 points.
+            - Try to make 1 point.
+            - Try to make a move that enables two different points (make tha game more interesting).
+            - Random move that doesn't enable the other player to make a point.
+            - Random move.
+        '''
+        
+        options = [(row, col)
+                    for row in range(1, len(self.matrix) + 1)
+                    for col in range(1, len(self.matrix) + 1)
+                    if self.matrix[row-1][col-1] == 0]
+        print options
+
+        # Try two points
+        for row, col in options:
+            for number in self.numbers:
+                ok, hits, score = self._make_move(row, col, number, player, False)
+                if score >= 2:
+                    self.make_move(row, col, number, player)
+                    return (row, col)
+
+        # Try one point
+        for row, col in options:
+            for number in self.numbers:
+                ok, hits, score = self._make_move(row, col, number, player, False)
+                if score >= 1:
+                    self.make_move(row, col, number, player)
+                    return (row, col)
+        
+        # Random
+        row, col = random.choice(options)
+        number = random.choice(self.numbers)
+        self.make_move(row, col, number, player)
+        return (row, col)
 
 if __name__ == "__main__":
     """Module test function."""

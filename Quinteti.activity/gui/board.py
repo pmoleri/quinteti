@@ -127,6 +127,8 @@ class Board:
         
         for n in self.numbers:
             self.items.add(n)
+            
+        self.arrange_gui()  # Arranges the gui according to the game state.
 
     def new_game(self):
         self.game = GameState("", "")
@@ -211,8 +213,30 @@ class Board:
         image = pygame.image.load(file_dir + instructions_image)
         rect = image.get_rect()
         rect.center = self.screen.get_rect().center
-        self.screen.blit(image,  rect)
+        self.screen.blit(image, rect)
 
+    def arrange_gui(self):
+        '''Arranges the numbers according to the game state.'''
+        
+        # First moves all the numbers to its original positions
+        i = 0
+        for number in self.numbers:
+            number.rect.center = self.number_locations[i]
+            i += 1
+        
+        # Then for each occupied cell, moves the number to that cell
+        coords = [ (row,col) for row in range(1,4) for col in range(1,4) ]
+        i = 0
+        for row, col in coords:
+            cell = self.game.get_cell(row, col)
+            if cell:
+                number, player = cell
+                if number > 0:
+                    gui_number = self.numbers[number-1]
+                    gui_cell = self.cells[i]
+                    gui_number.rect.center = gui_cell.rect.center
+            i += 1
+    
     def processXY(self, x, y):
         # If is showing instructions, it disables them
         if self.showing_instructions:
@@ -232,8 +256,9 @@ class Board:
                     row, col = c.get_pos()
                     player = self.game.get_enabled_player()
                     ok, hits = self.game.make_move(row, col, self.lastSelectedNumberCell.id_cell, player)
-                    if ok:                        
-                        self.lastSelectedNumberCell.rect = self.lastSelectedBoardCell.rect  # Moves the number to the board
+                    if ok:
+                        # Moves the number to the board
+                        self.lastSelectedNumberCell.rect.center = self.lastSelectedBoardCell.rect.center
                         self.lastSelectedNumberCell.set_selected(False)
                         self.lastSelectedNumberCell = None
                         
@@ -245,7 +270,9 @@ class Board:
                                 if number.id_cell in hits:
                                     number.set_selected(True)
 
-                
+                        player = self.game.get_enabled_player()
+                        self.game.auto_play(player)
+                        self.arrange_gui()
                 break
     
         # Checks if the selected coordinate is a number
@@ -268,7 +295,11 @@ class Board:
             # Deselect all numbers
             for number in self.numbers:
                 number.set_selected(False)
-    
+            
+            #player = self.game.get_enabled_player()
+            #self.game.auto_play(player)
+            #self.arrange_gui()
+        
     def _show_instructions(self):
         self.showing_instructions = True
     
