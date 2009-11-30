@@ -128,7 +128,11 @@ class Board:
         for n in self.numbers:
             self.items.add(n)
             
+        self.selected_numbers = []
+        
         self.arrange_gui()  # Arranges the gui according to the game state.
+        
+        self.computer_turn = False
 
     def new_game(self):
         self.game = GameState("", "")
@@ -216,7 +220,7 @@ class Board:
         self.screen.blit(image, rect)
 
     def arrange_gui(self):
-        '''Arranges the numbers according to the game state.'''
+        """Arranges the numbers according to the game state."""
         
         # First moves all the numbers to its original positions
         i = 0
@@ -236,8 +240,16 @@ class Board:
                     gui_cell = self.cells[i]
                     gui_number.rect.center = gui_cell.rect.center
             i += 1
-    
+            
+        for number in self.numbers:
+            if number in self.selected_numbers:
+                number.set_selected(True)
+            else:
+                number.set_selected(False)
+
     def processXY(self, x, y):
+        """Processes the x,y coordinates of a click."""
+        
         # If is showing instructions, it disables them
         if self.showing_instructions:
             self.showing_instructions = False
@@ -252,27 +264,11 @@ class Board:
             if c.coords_in(x, y):
                 isCell = True
                 self.lastSelectedBoardCell = c
+                
                 if self.lastSelectedNumberCell != None:
+                    number = self.lastSelectedNumberCell.id_cell
                     row, col = c.get_pos()
-                    player = self.game.get_enabled_player()
-                    ok, hits = self.game.make_move(row, col, self.lastSelectedNumberCell.id_cell, player)
-                    if ok:
-                        # Moves the number to the board
-                        self.lastSelectedNumberCell.rect.center = self.lastSelectedBoardCell.rect.center
-                        self.lastSelectedNumberCell.set_selected(False)
-                        self.lastSelectedNumberCell = None
-                        
-                        if hits:
-                            self.score_sound.play()
-                            # Sets a timer to update blinked cells in one second
-                            pygame.time.set_timer(pygame.USEREVENT + 1, 1500)
-                            for number in self.numbers:
-                                if number.id_cell in hits:
-                                    number.set_selected(True)
-
-                        player = self.game.get_enabled_player()
-                        self.game.auto_play(player)
-                        self.arrange_gui()
+                    self.make_move(number, row, col)
                 break
     
         # Checks if the selected coordinate is a number
@@ -288,18 +284,55 @@ class Board:
             self.new_button.callback()
         
         return True
-    
+
+    def make_move(self, number, row, col):
+        """ Attempts to make the move of the las selected number to the given position. """
+        
+        # Find the number
+        for n in self.numbers:
+            if n.id_cell == number:
+                self.lastSelectedNumberCell = n
+            
+        # Find the cell
+        for c in self.cells:
+            if (row, col) == c.get_pos():
+                self.lastSelectedBoardCell = c
+        
+        player = self.game.get_enabled_player()
+        ok, hits = self.game.make_move(row, col, self.lastSelectedNumberCell.id_cell, player)
+        if ok:
+            if hits:
+                self.score_sound.play()
+                # Sets a timer to update blinked cells in one second
+                pygame.time.set_timer(pygame.USEREVENT + 1, 1500)
+                self.selected_numbers = [number for number in self.numbers if number.id_cell in hits]
+                
+                # Sets the flag to make the computer play after the timer
+                player = self.game.get_enabled_player()
+                if player == 2:
+                    self.computer_turn = True
+            else:
+                # The computer makes an automatic move
+                player = self.game.get_enabled_player()
+                if player == 2:
+                    (number, row, col) = self.game.auto_play(player)
+                    self.make_move(number, row, col)
+                
+            self.arrange_gui()
+
     def user_event(self, event):
         pygame.time.set_timer(pygame.USEREVENT + 1, 0)
         if event.type == pygame.USEREVENT + 1:
             # Deselect all numbers
-            for number in self.numbers:
-                number.set_selected(False)
+            self.selected_numbers = []
+            self.arrange_gui()
             
-            #player = self.game.get_enabled_player()
-            #self.game.auto_play(player)
-            #self.arrange_gui()
-        
+            if self.computer_turn:
+                player = self.game.get_enabled_player()
+                if player == 2:
+                    (number, row, col) = self.game.auto_play(player)
+                    self.make_move(number, row, col)
+    
     def _show_instructions(self):
         self.showing_instructions = True
     

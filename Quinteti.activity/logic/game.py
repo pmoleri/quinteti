@@ -208,22 +208,20 @@ class GameState:
             for number in self.numbers:
                 ok, hits, score = self._make_move(row, col, number, player, False)
                 if score >= 2:
-                    self.make_move(row, col, number, player)
-                    return (row, col)
+                    return (number, row, col)
 
         # Try one point
         for row, col in options:
             for number in self.numbers:
                 ok, hits, score = self._make_move(row, col, number, player, False)
                 if score >= 1:
-                    self.make_move(row, col, number, player)
-                    return (row, col)
+                    return (number, row, col)
         
         # Random
         row, col = random.choice(options)
         number = random.choice(self.numbers)
-        self.make_move(row, col, number, player)
-        return (row, col)
+        return (number, row, col)
+
 
 if __name__ == "__main__":
     """Module test function."""
