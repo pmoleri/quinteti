@@ -57,5 +57,5 @@ class Button(pygame.sprite.Sprite):
             rect = self.image.get_rect()
             
             dash = pygame.Rect(rect.left, rect.bottom-3, rect.width, 3)
-            black = pygame.Color(0, 0, 0, 192)
+            black = pygame.Color("0x000000F8")
             self.image.fill(black, dash)

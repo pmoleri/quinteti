@@ -23,9 +23,10 @@ This Activity is based on olpcgames.PyGameActivity.
 The activity attributa game_name is the module name that
 has the main() function."""
 
-from sugar.activity.activity import ActivityToolbox
+from sugar.activity.activity import ActivityToolbox, ActivityToolbar
 from olpcgames import activity
 from gettext import gettext as _
+import gtk
 
 # PyGameActivity: http://www.vrplumber.com/sugar-docs/olpcgames.activity.html
 class Quinteti(activity.PyGameActivity):
@@ -33,3 +34,15 @@ class Quinteti(activity.PyGameActivity):
     game_name = 'main'          # Module name with main() function.
     game_title = _('QuinTeTi')
     game_size = None
+    
+    def build_toolbar(self):
+        """
+        Overrides to remove collaboration button
+        """
+        toolbar = ActivityToolbar(self)
+        toolbar.share.hide()    # Oculta el combo de share
+        toolbar.show()
+        self.set_toolbox(toolbar)
+        
+        toolbar.title.unset_flags(gtk.CAN_FOCUS)
+        return toolbar
