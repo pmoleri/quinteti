@@ -22,15 +22,20 @@ import pygame
 """Button is a PyGame Sprite with a callback function."""
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, initial_position, nomImage, callback):
+    def __init__(self, initial_position, image_name, callback):
 
         pygame.sprite.Sprite.__init__(self)
         
-        self.set_image(nomImage)
+        self.selected = False
+        
+        self.image_name = image_name
+        self.set_image(image_name)
+        
         self.rect = self.image.get_rect()
         self.rect.topleft = initial_position     # Moves the recteangle to its predetermined center
         
         self.callback = callback
+
     
     def coords_in(self, x, y):
         if self.rect.collidepoint(x, y):
@@ -42,3 +47,15 @@ class Button(pygame.sprite.Sprite):
             self.image = pygame.image.load(nomImage)
         else:
             self.image = None
+
+    def set_selected(self, selected):
+        self.selected = selected
+        
+        self.set_image(self.image_name)
+        
+        if selected:    
+            rect = self.image.get_rect()
+            
+            dash = pygame.Rect(rect.left, rect.bottom-3, rect.width, 3)
+            black = pygame.Color(0, 0, 0, 192)
+            self.image.fill(black, dash)

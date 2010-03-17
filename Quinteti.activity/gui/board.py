@@ -44,6 +44,11 @@ instructions_coords = (950, 745)
 instructions_button = "instructions_button.png"
 instructions_image = "instructions.png"
 
+mode_man_man_image = "man-vs-man.png"
+mode_man_man_coords = (970, 20)
+mode_man_pc_image = "man-vs-computer.png"
+mode_man_pc_coords = (800, 20)
+
 player_win_image = "player_win.png"
 
 score_sound_file = file_dir + "jupeee.ogg"
@@ -100,6 +105,7 @@ class Board:
         if not self.font:
             self.font = pygame.font.Font(None, font_size)
         
+        self.mode = "PC"
         self.screen = screen
         self.game = game
         self.showing_instructions = False
@@ -107,8 +113,16 @@ class Board:
         self.init_board()
 
     def init_board (self):
-        self.new_button = Button(new_image_coords, file_dir + new_image,  self.new_game)
+        self.new_button = Button(new_image_coords, file_dir + new_image, self.new_game)
         self.instructions_button = Button(instructions_coords, file_dir + instructions_button,  self._show_instructions)
+        self.mode_man_man_button = Button(mode_man_man_coords, file_dir + mode_man_man_image, self.change_to_man_man)
+        self.mode_man_pc_button = Button(mode_man_pc_coords, file_dir + mode_man_pc_image, self.change_to_man_pc)
+        
+        if self.mode == "PC":
+            self.mode_man_pc_button.set_selected(True)
+        else:
+            self.mode_man_man_button.set_selected(True)
+        
         self.cells = []
         self.numbers = []
         self.lastSelectedBoardCell = None
@@ -124,6 +138,8 @@ class Board:
         self.items = pygame.sprite.Group()
         self.items.add(self.new_button)
         self.items.add(self.instructions_button)
+        self.items.add(self.mode_man_man_button)
+        self.items.add(self.mode_man_pc_button)
         
         for n in self.numbers:
             self.items.add(n)
@@ -137,7 +153,17 @@ class Board:
     def new_game(self):
         self.game = GameState("", "")
         self.init_board()
-        
+
+    def change_to_man_man(self):
+        self.mode = "MAN"
+        self.game = GameState("", "")
+        self.init_board()
+    
+    def change_to_man_pc(self):
+        self.mode = "PC"
+        self.game = GameState("", "")
+        self.init_board()
+    
     def _init_cells(self):
         i = 1
         for row in range(1, 4):
@@ -282,6 +308,12 @@ class Board:
                     
         if self.new_button.coords_in(x, y):
             self.new_button.callback()
+            
+        elif self.mode_man_man_button.coords_in(x, y):
+            self.mode_man_man_button.callback()
+            
+        elif self.mode_man_pc_button.coords_in(x, y):
+            self.mode_man_pc_button.callback()
         
         return True
 
@@ -309,12 +341,12 @@ class Board:
                 
                 # Sets the flag to make the computer play after the timer
                 player = self.game.get_enabled_player()
-                if player == 2:
+                if player == 2 and self.mode=="PC":
                     self.computer_turn = True
             else:
                 # The computer makes an automatic move
                 player = self.game.get_enabled_player()
-                if player == 2:
+                if player == 2 and self.mode=="PC":
                     (number, row, col) = self.game.auto_play(player)
                     self.make_move(number, row, col)
                 
